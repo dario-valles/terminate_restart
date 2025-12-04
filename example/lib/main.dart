@@ -7,6 +7,11 @@ import 'package:terminate_restart/terminate_restart.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure google_fonts to allow HTTP fetching on web
+  // This prevents AssetManifest.json errors
+  GoogleFonts.config.allowRuntimeFetching = true;
+
   TerminateRestart.instance.initialize();
   runApp(const MyApp());
 }
