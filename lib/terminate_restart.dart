@@ -4,8 +4,10 @@ export 'src/terminate_restart_base.dart';
 export 'terminate_restart_platform_interface.dart';
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'terminate_restart_platform_interface.dart';
 
 /// Options for restarting the app
 class TerminateRestartOptions {
@@ -52,9 +54,6 @@ class TerminateRestart {
   /// Private constructor
   TerminateRestart._();
 
-  final MethodChannel _channel =
-      const MethodChannel('com.ahmedsleem.terminate_restart/restart');
-
   final MethodChannel _internalChannel =
       const MethodChannel('com.ahmedsleem.terminate_restart/internal');
 
@@ -65,7 +64,10 @@ class TerminateRestart {
   void initialize({VoidCallback? onRootReset}) {
     if (!_initialized) {
       _onRootReset = onRootReset;
-      _internalChannel.setMethodCallHandler(_handleInternalMessages);
+      // Only set up method channel handler on non-web platforms
+      if (!kIsWeb) {
+        _internalChannel.setMethodCallHandler(_handleInternalMessages);
+      }
       _initialized = true;
     }
   }
@@ -83,15 +85,14 @@ class TerminateRestart {
     required TerminateRestartOptions options,
   }) async {
     try {
-      final result = await _channel.invokeMethod<bool>('restart', {
-        'terminate': options.terminate,
-        'clearData': options.clearData,
-        'preserveKeychain': options.preserveKeychain,
-        'preserveUserDefaults': options.preserveUserDefaults,
-      });
-      return result ?? false;
-    } on PlatformException catch (e) {
-      debugPrint('Error restarting app: ${e.message}');
+      return await TerminateRestartPlatform.instance.restartApp(
+        terminate: options.terminate,
+        clearData: options.clearData,
+        preserveKeychain: options.preserveKeychain,
+        preserveUserDefaults: options.preserveUserDefaults,
+      );
+    } catch (e) {
+      debugPrint('Error restarting app: $e');
       return false;
     }
   }
